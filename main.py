@@ -7,6 +7,9 @@ class Line:
 	def __init__(self,startPoint,endPoint):
 		self.startPoint=startPoint
 		self.endPoint=endPoint
+		
+	def plot(self,ax):
+		ax.plot(np.array([self.startPoint[0],self.endPoint[0]]),np.array([self.startPoint[1],self.endPoint[1]]))
 
 class Arc:
 	def __init__(self,centerPoint=None,startPoint=None,endPoint=None,radius=None,startAngle=None,endAngle=None):
@@ -75,6 +78,11 @@ class Arc:
 	def calcRadius(self, point):
 		return np.linalg.norm(point-self.centerPoint)
 		
+	def sample(self, x):
+		ang=np.arccos((x-self.centerPoint[0])/self.radius)
+		ang=np.where(self.startAngle>ang or self.endAngle<ang, -ang, ang)
+		return self.centerPoint[1]+self.radius*np.sin(ang) 
+		
 	def plot(self,ax):
 		angspace=np.linspace(self.startAngle,self.endAngle,10)
 		x=self.centerPoint[0]+self.radius*np.cos(angspace)
@@ -84,14 +92,14 @@ class Arc:
 		
 
 class BiArc:
-	def __init__(self,startPoint,endPoint,startSlope,endSlope):
+	def __init__(self,startPoint,endPoint,startSlope,endSlope,fun):
 		self.startPoint=startPoint
 		self.endPoint=endPoint
 		self.startSlope=startSlope
 		self.endSlope=endSlope
+		self.fun=fun
 		self.arc1=None
 		self.arc2=None
-		self.computeArcs()
 
 	def computeArcs(self):
 		segment=self.endPoint-self.startPoint
@@ -105,14 +113,17 @@ class BiArc:
 		nEnd=np.array([-np.sin(arg_tEnd),np.cos(arg_tEnd)])
 		alpha=psi-arg_tStart
 		beta=arg_tEnd-psi
-		theta=alpha
+		if alpha*beta>0:
+			theta=alpha
+		else:
+			theta=(3*alpha-beta)/2
 		tMiddle=np.array([np.cos(theta+arg_tStart),np.sin(theta+arg_tStart)])
 		nMiddle=np.array([-np.sin(theta+arg_tStart),np.cos(theta+arg_tStart)])
 		
 		print(alpha,beta)
-		if math.isclose(theta,0) and math.isclose(beta,0):
-			self.arc1=Line(startPoint,endPoint)
-		elif math.isclose(theta,0) or math.isclose(beta,0):
+		if (math.isclose(theta,0) or math.isclose(alpha+beta,0)) and (math.isclose(alpha+beta-theta,0) or math.isclose(alpha+beta,0)):
+			self.arc1=Line(self.startPoint,self.endPoint)
+		elif math.isclose(theta,0) or math.isclose(alpha+beta,0) or math.isclose(alpha+beta-theta,0):
 			raise ValueError("Cannot build biarc with the given specs")
 		else:
 			r1=segmentLength/(2*np.sin((alpha+beta)/2))*np.sin((beta-alpha+theta)/2)/np.sin(theta/2)
@@ -123,6 +134,19 @@ class BiArc:
 			self.arc1=Arc(centerPoint=O1, startPoint=self.startPoint, endPoint=middlePoint)
 			self.arc2=Arc(centerPoint=O2, startPoint=middlePoint, endPoint=self.endPoint)
 			print(r1,r2)
+		
+	def estimateError(self):
+		segment=self.endPoint-self.startPoint
+		segmentLength=np.linalg.norm(segment)
+		psi=np.arctan2(segment[1],segment[0])
+		arg_tStart=np.arctan(self.startSlope)
+		arg_tEnd=np.arctan(self.endSlope)
+		alpha=psi-arg_tStart
+		beta=arg_tEnd-psi
+		db=np.linalg.norm(self.endPoint-self.startPoint)/2*np.abs(np.tan(alpha/2)-np.tan(beta/2))
+		dm=db/13.5
+		testingPoints=np.linspace(startPoint,endPoint,7)
+		
 		
 		
 	def plot(self,ax):
@@ -165,7 +189,7 @@ ax.set(xlabel='x', ylabel='y',
 ax.grid()
 
 #Fixed samples arcs
-fixed_samples=np.linspace(a,b,6)
+fixed_samples=np.linspace(a,b,50)
 fixed_arcs=[]
 for i in range(len(fixed_samples)-1):
 	SP=np.array([fixed_samples[i],fun(fixed_samples[i])])
