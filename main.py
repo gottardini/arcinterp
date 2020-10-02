@@ -196,7 +196,7 @@ for i in range(len(fixed_samples)-1):
 	EP=np.array([fixed_samples[i+1],fun(fixed_samples[i+1])])
 	SS=dfun(fixed_samples[i])
 	ES=dfun(fixed_samples[i+1])
-	fixed_arcs.append(BiArc(SP,EP,SS,ES))
+	fixed_arcs.append(BiArc(SP,EP,SS,ES,fun))
 	
 #Plot original function
 xspace=np.linspace(a,b,500)
@@ -204,6 +204,7 @@ ax.plot(xspace, fun(xspace), color="black")
 
 #plot fixed samples biarc interpolation
 for biarc in fixed_arcs:
+	biarc.computeArcs()
 	biarc.plot(ax)
 
 fig.savefig("test.png")
