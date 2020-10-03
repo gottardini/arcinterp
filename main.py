@@ -189,7 +189,7 @@ ax.set(xlabel='x', ylabel='y',
 ax.grid()
 
 #Fixed samples arcs
-fixed_samples=np.linspace(a,b,50)
+fixed_samples=np.linspace(a,b,15)
 fixed_arcs=[]
 for i in range(len(fixed_samples)-1):
 	SP=np.array([fixed_samples[i],fun(fixed_samples[i])])
@@ -201,6 +201,7 @@ for i in range(len(fixed_samples)-1):
 #Plot original function
 xspace=np.linspace(a,b,500)
 ax.plot(xspace, fun(xspace), color="black")
+ax.plot(fixed_samples,fun(fixed_samples),linestyle="None",marker="*")
 
 #plot fixed samples biarc interpolation
 for biarc in fixed_arcs:
@@ -211,4 +212,3 @@ fig.savefig("test.png")
 plt.show()
 
 
-	
